@@ -162,9 +162,9 @@ class Data:
 
 
 if __name__ == "__main__":
-    #open playlists file and turn urls into list, pass to main
     with open("playlist_links.txt", "r") as playlist_links:
-        urls = playlist_links.readlines()
-        
+        #get rid of "\n" from each url
+        urls = playlist_links.read().splitlines()
+
     data = Data()
     data.main(urls)
