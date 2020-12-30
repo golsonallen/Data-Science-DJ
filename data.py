@@ -115,12 +115,37 @@ class Data:
         #join self.df with features df
         self.df = self.df.merge(features_df, on = "id")
 
+    #takes audio analysis as parameter and returns dictionary of 
+    #important features and their values 
+    def addAudioAnalysisHelper(self, responseDict, trackID: str):
+        audioDict = {"id": trackID}
+        trackDict = responseDict["track"]
+
+        audioDict["end_of_fade_in"] = trackDict["end_of_fade_in"]
+        audioDict["start_of_fade_out"] = trackDict["start_of_fade_out"]
+        audioDict["analysis_sample_rate"] = trackDict["analysis_sample_rate"]
+        return audioDict
+
     def addAudioAnalysis(self):
-        
+        headers = {
+            "Authorization": "Bearer {}".format(self.token),
+        }
+        initalURL = "https://api.spotify.com/v1/audio-analysis/{}".format(self.df["id"][0])
+        initial_trackID_response = requests.get(url = initalURL, headers = headers)
+        analysisDict = self.addAudioAnalysisHelper(initial_trackID_response.json(), self.df["id"][0])
+        analysis_df = pd.DataFrame.from_records([analysisDict])
+
+        for trackID in self.df["id"][1:]:
+            url = "https://api.spotify.com/v1/audio-analysis/{}".format(trackID)
+            response = requests.get(url = url, headers = headers)
+            tempDict = self.addAudioAnalysisHelper(response.json(), trackID)
+            temp_df = pd.DataFrame.from_records([tempDict])
+            analysis_df = analysis_df.append(temp_df, ignore_index = True)
+        #join self.df with analysis df
+        self.df = self.df.merge(analysis_df, on = "id")
 
     def main(self):
-        pass
-
+        self.df.to_csv("single_playlist_data.csv", index = False)
 
 if __name__ == "__main__":
     data = Data()
@@ -134,3 +159,5 @@ if __name__ == "__main__":
     #print(json.dumps(playlistItems, indent=4))
     data.createSongDataFrame(tracklist)
     data.addAudioFeatures()
+    data.addAudioAnalysis()
+    data.main()
