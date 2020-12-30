@@ -1,5 +1,6 @@
 from secrets import ClientID
 from secrets import ClientSecret
+from math import ceil
 import requests
 import base64
 import json
@@ -10,6 +11,8 @@ class Data:
     def __init__(self):
         self.ID = ClientID
         self.Secret = ClientSecret
+        self.token = ""
+        self.df = pd.DataFrame()
 
     #Need to include a Base 64 encoded string that contains the client ID and client secret key with the request
     def base64Encode(self):
@@ -95,7 +98,7 @@ class Data:
         #each time since playlist length is over the limit
         else:
             finalList = []
-            iterations = round(playlistLength / 100)
+            iterations = ceil(playlistLength / 100)
             offset = 0
             for _ in range(iterations):
                 items = self.getPlaylistItems(limit = 100, offset = offset, playlistID = playlistID)
@@ -108,18 +111,10 @@ class Data:
         self.df = pd.DataFrame(totalTrackList)
 
     def addAudioFeatures(self):
-        headers = {
-            "Authorization": "Bearer {}".format(self.token),
-        }
-        #use first track to construct a dataframe
-        initalURL = "https://api.spotify.com/v1/audio-features/{}".format(self.df["id"][0])
-        initial_trackID_response = requests.get(url = initalURL, headers = headers)
-        features_df = pd.DataFrame.from_records([initial_trackID_response.json()])
-
-        #form a complete df of audio features by adding the rest of the tracks
-        for trackID in self.df["id"][1:]:
+        features_df = pd.DataFrame()
+        for trackID in self.df["id"]:
             url = "https://api.spotify.com/v1/audio-features/{}".format(trackID)
-            response = requests.get(url = url, headers = headers)
+            response = requests.get(url = url, headers = {"Authorization": "Bearer {}".format(self.token)})
             temp_df = pd.DataFrame.from_records([response.json()])
             features_df = features_df.append(temp_df, ignore_index = True)
         #join self.df with features df
@@ -128,26 +123,19 @@ class Data:
     #takes audio analysis dict as parameter and returns dictionary of 
     #only the important features and their values 
     def addAudioAnalysisHelper(self, responseDict, trackID: str):
-        audioDict = {"id": trackID}
         trackDict = responseDict["track"]
 
+        audioDict = {"id": trackID}
         audioDict["end_of_fade_in"] = trackDict["end_of_fade_in"]
         audioDict["start_of_fade_out"] = trackDict["start_of_fade_out"]
         audioDict["analysis_sample_rate"] = trackDict["analysis_sample_rate"]
         return audioDict
 
     def addAudioAnalysis(self):
-        headers = {
-            "Authorization": "Bearer {}".format(self.token),
-        }
-        initalURL = "https://api.spotify.com/v1/audio-analysis/{}".format(self.df["id"][0])
-        initial_trackID_response = requests.get(url = initalURL, headers = headers)
-        analysisDict = self.addAudioAnalysisHelper(initial_trackID_response.json(), self.df["id"][0])
-        analysis_df = pd.DataFrame.from_records([analysisDict])
-
-        for trackID in self.df["id"][1:]:
+        analysis_df = pd.DataFrame()
+        for trackID in self.df["id"]:
             url = "https://api.spotify.com/v1/audio-analysis/{}".format(trackID)
-            response = requests.get(url = url, headers = headers)
+            response = requests.get(url = url, headers = {"Authorization": "Bearer {}".format(self.token)})
             tempDict = self.addAudioAnalysisHelper(response.json(), trackID)
             temp_df = pd.DataFrame.from_records([tempDict])
             analysis_df = analysis_df.append(temp_df, ignore_index = True)
@@ -155,7 +143,7 @@ class Data:
         self.df = self.df.merge(analysis_df, on = "id")
 
     def main(self):
-        self.df.to_csv("single_playlist_data2.csv", index = False)
+        self.df.to_csv("single_playlist_data4.csv", index = False)
 
 
 if __name__ == "__main__":
@@ -175,3 +163,8 @@ if __name__ == "__main__":
     data.addAudioFeatures()
     data.addAudioAnalysis()
     data.main()
+    
+    #df1 is empty main df and df2 is the df of each playlist
+    df1 = pd.DataFrame()
+    df2 = data.df
+    df1 = df1.append(df2, ignore_index = True)
