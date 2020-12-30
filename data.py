@@ -48,12 +48,11 @@ class Data:
         }
         params = {
             #only need one track item since we are only looking at the playlist's length
-            #and not what's in the playlist
             "limit": "1"
         } 
         response = requests.get(url = url, headers = headers, params=params)
-        playlistLength = response.json()["total"]
-        return playlistLength
+        #playlist Length
+        return response.json()["total"]
 
     #returns a list of track objects
     def getPlaylistItems(self, limit: int, offset: int, playlistID: str):
@@ -66,36 +65,47 @@ class Data:
             "offset": str(offset)
         } 
         response = requests.get(url = url, headers = headers, params=params)
-        items = response.json()["items"]
-        return items
+        return response.json()["items"]
+
+    #iterate through each track object and extract only the key info
+    #return a list containing a dictionary for each track's info
+    def extractSongsFromPlaylistItems(self, items: list):
+        track_info_list = []
+        for track_item in items:
+            key_info = {}
+            trackDict = track_item["track"]
+            key_info["name"] = trackDict["name"]
+            key_info["id"] = trackDict["id"]
+            key_info["duration_ms"] = trackDict["duration_ms"]
+            key_info["explicit"] = trackDict["explicit"]
+            key_info["popularity"] = trackDict["popularity"]
+
+            track_info_list.append(key_info)
+        return track_info_list
 
     #limit on tracks to return is capped at 100 so playlist length will dictate
     #the way to get all of the tracks in the playlist
     def getCompletePlaylist(self, playlistID: str, playlistLength: int):
         #can get all items in just one request
         if playlistLength <= 100:
-            totalTrackList = self.getPlaylistItems(limit = playlistLength, offset = 0, playlistID = playlistID)
-            return totalTrackList
+            items = self.getPlaylistItems(limit = playlistLength, offset = 0, playlistID = playlistID)
+            #return list containing a dict for every song in the playlist
+            return self.extractSongsFromPlaylistItems(items)
         #need to make multiple requests and update offset (index of first item to return)
         #each time since playlist length is over the limit
         else:
-            totalTrackList = []
-            iterations = playlistLength // 100
-            remainder = playlistLength % 100
+            finalList = []
+            iterations = round(playlistLength / 100)
             offset = 0
             for _ in range(iterations):
-                trackList = self.getPlaylistItems(limit = 100, offset = offset, playlistID = playlistID)
-                for track in trackList:
-                    totalTrackList.append(track["track"])
+                items = self.getPlaylistItems(limit = 100, offset = offset, playlistID = playlistID)
+                #need to add the track list from each iteration to a master list containing info for every track
+                finalList += self.extractSongsFromPlaylistItems(items)
                 offset += 100
-            trackList = self.getPlaylistItems(limit = remainder, offset = playlistLength - remainder, playlistID= playlistID)
-            for track in trackList:
-                totalTrackList.append(track["track"])
-            return totalTrackList
+            return finalList
             
     def createSongDataFrame(self, totalTrackList: list):
         self.df = pd.DataFrame(totalTrackList)
-        self.df = self.df[["name", "id", "duration_ms", "explicit", "popularity", ]]
 
     def addAudioFeatures(self):
         headers = {
@@ -115,8 +125,8 @@ class Data:
         #join self.df with features df
         self.df = self.df.merge(features_df, on = "id")
 
-    #takes audio analysis as parameter and returns dictionary of 
-    #important features and their values 
+    #takes audio analysis dict as parameter and returns dictionary of 
+    #only the important features and their values 
     def addAudioAnalysisHelper(self, responseDict, trackID: str):
         audioDict = {"id": trackID}
         trackDict = responseDict["track"]
@@ -145,13 +155,17 @@ class Data:
         self.df = self.df.merge(analysis_df, on = "id")
 
     def main(self):
-        self.df.to_csv("single_playlist_data.csv", index = False)
+        self.df.to_csv("single_playlist_data2.csv", index = False)
+
 
 if __name__ == "__main__":
     data = Data()
     encodedAuth = data.base64Encode()
     data.authorize(encodedAuth)
-    playlistID = data.getPlaylistID("https://open.spotify.com/playlist/7ppwau1XzaZvvW6qnBbjuE")
+
+    PLAYLISTURL = "https://open.spotify.com/playlist/3Di88mvYplBtkDBIzGLiiM"
+
+    playlistID = data.getPlaylistID(PLAYLISTURL)
     #print(playlistID)
     playlistLength = data.getPlaylistLength(playlistID)
     #print(playlistLength)
