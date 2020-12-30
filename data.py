@@ -142,29 +142,29 @@ class Data:
         #join self.df with analysis df
         self.df = self.df.merge(analysis_df, on = "id")
 
-    def main(self):
-        self.df.to_csv("single_playlist_data4.csv", index = False)
+    def main(self, playlistURLs: list):
+        #empty df that will hold the data from all the playlists combined
+        df1 = pd.DataFrame()
+        encodedAuth = self.base64Encode()
+        self.authorize(encodedAuth)
+        for url in playlistURLs:
+            playlistID = self.getPlaylistID(url)
+            playlistLength = self.getPlaylistLength(playlistID)
+            tracklist = self.getCompletePlaylist(playlistID, playlistLength)
+            self.createSongDataFrame(tracklist)
+            self.addAudioFeatures()
+            self.addAudioAnalysis()
+
+            #add each individual playlist df to main df
+            df1 = df1.append(self.df, ignore_index = True)
+            
+        df1.to_csv("multi_playlist_data.csv", index = False)
 
 
 if __name__ == "__main__":
+    #open playlists file and turn urls into list, pass to main
+    with open("playlist_links.txt", "r") as playlist_links:
+        urls = playlist_links.readlines()
+        
     data = Data()
-    encodedAuth = data.base64Encode()
-    data.authorize(encodedAuth)
-
-    PLAYLISTURL = "https://open.spotify.com/playlist/3Di88mvYplBtkDBIzGLiiM"
-
-    playlistID = data.getPlaylistID(PLAYLISTURL)
-    #print(playlistID)
-    playlistLength = data.getPlaylistLength(playlistID)
-    #print(playlistLength)
-    tracklist = data.getCompletePlaylist(playlistID, playlistLength)
-    #print(json.dumps(playlistItems, indent=4))
-    data.createSongDataFrame(tracklist)
-    data.addAudioFeatures()
-    data.addAudioAnalysis()
-    data.main()
-    
-    #df1 is empty main df and df2 is the df of each playlist
-    df1 = pd.DataFrame()
-    df2 = data.df
-    df1 = df1.append(df2, ignore_index = True)
+    data.main(urls)
