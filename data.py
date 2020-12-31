@@ -158,7 +158,7 @@ class Data:
             #add each individual playlist df to main df
             df1 = df1.append(self.df, ignore_index = True)
             
-        df1.to_csv("multi_playlist_data.csv", index = False)
+        df1.to_csv("song_data.csv", index = False)
 
 
 if __name__ == "__main__":
