@@ -6,7 +6,7 @@ import base64
 import json
 import pandas as pd
 
-class Data:
+class DataCollector:
 
     def __init__(self):
         self.ID = ClientID
@@ -166,5 +166,5 @@ if __name__ == "__main__":
         #get rid of "\n" from each url
         urls = playlist_links.read().splitlines()
 
-    data = Data()
+    data = DataCollector()
     data.main(urls)
