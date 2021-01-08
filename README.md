@@ -1,6 +1,5 @@
 # Data Science DJ - Griffin Olson-Allen
 
-# About
 ## Data Science Project Examining Electonic Dance Music Songs
 This project contains 4 files.
 1. **playlist_links.txt**: links to the EDM playlists on Spotify I used for the data
