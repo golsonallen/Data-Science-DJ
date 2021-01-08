@@ -24,9 +24,11 @@ The notebook is the bulk of the project. This is where I complete data cleaning,
 1. Cleaning
 
 I dropped duplicate or unnecessary features and did a tiny bit of feature engineering.
+
 2. Visualizing
 
 I mostly used Seaborn to visualize the data. I looked for general trends in the songs and trends between features I thought would be related. I also tried to compare the distribution of certain features to what would be expected of electronic dance music. 
+
 3. Prediction
 
 I used two models to try and predict a song's popularity: a Linear Regression and a Support Vector Regression. Both performed pretty poorly and had high error rates. With popularity on a scale of 0-100, on average, I was off by 17 with the Linear Regression and 16 with the Support Vector Regression. R squared for both was close to 0. 
