@@ -8,14 +8,14 @@ import pandas as pd
 
 class DataCollector:
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.ID = ClientID
         self.Secret = ClientSecret
         self.token = ""
         self.df = pd.DataFrame()
 
     #Need to include a Base 64 encoded string that contains the client ID and client secret key with the request
-    def base64Encode(self):
+    def base64Encode(self) -> str:
         message = self.ID + ":" + self.Secret
         #convert message to a bytes-like object
         message_bytes = message.encode('ascii')
@@ -26,7 +26,7 @@ class DataCollector:
         return base64_message
 
     #Request authorization, gain access token
-    def authorize(self, encodedAuth: str):
+    def authorize(self, encodedAuth: str) -> None:
         url = "https://accounts.spotify.com/api/token"
         headers = {
             "Authorization": "Basic {}".format(encodedAuth)
@@ -38,13 +38,13 @@ class DataCollector:
         self.token = response.json()["access_token"]
         #TO DO: figure out how to handle expiration time of token
 
-    def getPlaylistID(self, playlistURL: str):
+    def getPlaylistID(self, playlistURL: str) -> str:
         playlistID = playlistURL.split("/")[-1]
         return playlistID
 
     #uses the Get a Playlist's Items endpoint but only to check the total number
     #of track in the playlist
-    def getPlaylistLength(self, playlistID: str):
+    def getPlaylistLength(self, playlistID: str) -> int:
         url = "https://api.spotify.com/v1/playlists/{}/tracks".format(playlistID)
         headers = {
             "Authorization": "Bearer {}".format(self.token),
@@ -58,7 +58,7 @@ class DataCollector:
         return response.json()["total"]
 
     #returns a list of track objects
-    def getPlaylistItems(self, limit: int, offset: int, playlistID: str):
+    def getPlaylistItems(self, limit: int, offset: int, playlistID: str) -> list:
         url = "https://api.spotify.com/v1/playlists/{}/tracks".format(playlistID)
         headers = {
             "Authorization": "Bearer {}".format(self.token),
@@ -72,7 +72,7 @@ class DataCollector:
 
     #iterate through each track object and extract only the key info
     #return a list containing a dictionary for each track's info
-    def extractSongsFromPlaylistItems(self, items: list):
+    def extractSongsFromPlaylistItems(self, items: list) -> list:
         track_info_list = []
         for track_item in items:
             key_info = {}
@@ -88,7 +88,7 @@ class DataCollector:
 
     #limit on tracks to return is capped at 100 so playlist length will dictate
     #the way to get all of the tracks in the playlist
-    def getCompletePlaylist(self, playlistID: str, playlistLength: int):
+    def getCompletePlaylist(self, playlistID: str, playlistLength: int) -> list:
         #can get all items in just one request
         if playlistLength <= 100:
             items = self.getPlaylistItems(limit = playlistLength, offset = 0, playlistID = playlistID)
@@ -107,7 +107,7 @@ class DataCollector:
                 offset += 100
             return finalList
             
-    def createSongDataFrame(self, totalTrackList: list):
+    def createSongDataFrame(self, totalTrackList: list) -> None:
         self.df = pd.DataFrame(totalTrackList)
 
     def addAudioFeatures(self):
@@ -122,7 +122,7 @@ class DataCollector:
 
     #takes audio analysis dict as parameter and returns dictionary of 
     #only the important features and their values 
-    def addAudioAnalysisHelper(self, responseDict, trackID: str):
+    def addAudioAnalysisHelper(self, responseDict, trackID: str) -> dict:
         trackDict = responseDict["track"]
 
         audioDict = {"id": trackID}
@@ -131,7 +131,7 @@ class DataCollector:
         audioDict["analysis_sample_rate"] = trackDict["analysis_sample_rate"]
         return audioDict
 
-    def addAudioAnalysis(self):
+    def addAudioAnalysis(self) -> None:
         analysis_df = pd.DataFrame()
         for trackID in self.df["id"]:
             url = "https://api.spotify.com/v1/audio-analysis/{}".format(trackID)
@@ -142,7 +142,7 @@ class DataCollector:
         #join self.df with analysis df
         self.df = self.df.merge(analysis_df, on = "id")
 
-    def main(self, playlistURLs: list):
+    def main(self, playlistURLs: list) -> None:
         #empty df that will hold the data from all the playlists combined
         df1 = pd.DataFrame()
         encodedAuth = self.base64Encode()
