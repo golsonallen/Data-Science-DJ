@@ -1,8 +1,8 @@
-# Data Science DJ - Griffin Olson-Allen
+# Data Science DJ
 
 ## Data Science Project Examining Electonic Dance Music Songs
 This project contains 4 files.
-1. **playlist_links.txt**: links to the EDM playlists on Spotify I used for the data
+1. **playlist_links.txt**: links to the Spotify EDM playlists that I used for the dataset
 2. **dataCollection.py**: a script to get all the data from the Spotify playlist
 3. **song_data.csv**: song data
 4. **DJ.ipynb**: cleaning, visualizing, and making predictions from the data.
@@ -11,7 +11,7 @@ This project contains 4 files.
 I searched Spotify for different EDM (Electronic Dance Music) playlists and picked a few of the ones with the most likes and most songs in them to use for song data. Replace the playlist links with different ones to generate your own song data.
 
 # dataCollection.py
-This file is the actual program to use the playlist list to gather song data. I used the Spotify API extensively. First, I extracted the songs from each playlist and a few characteristics of the song to form a massive song list. Then, for each song, I used the Spotify API to get every song's audio features and audio analysis. The final product was song_data.csv
+This file is the script that gathers song data from the list of playlists. I used the Spotify API extensively. First, I extracted the songs from each playlist and a few characteristics of the song to form a massive song list. Then, for each song, I used the Spotify API to get every song's audio features and audio analysis. The final product was song_data.csv
 
 # song_data.csv
 The dataset I used for the project: 1038 instances and 26 features.
